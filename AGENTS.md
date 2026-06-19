@@ -2,37 +2,38 @@
 This is the authoritative control surface for all coding agents. Read this first.
 
 ## 0. Doc Read Order
-1. AGENTS.md
-2. ARCHITECTURE.md
-3. CONVENTIONS.md
+Before making changes, read documents in this order:
+
+1. `AGENTS.md`
+2. `CONTEXT.md`
+3. `ARCHITECTURE.md`
+4. relevant ADRs in `docs/adr/`
+5. `CONVENTIONS.md`
+6. `REVIEW-STANDARDS.md`
 
 ## 1. Repository Map
+Target repository layout:
 ```
 src/web/                Next.js 16 frontend (App Router, Tailwind v4, shadcn/ui)
 src/api/                FastAPI backend API
 src/services/           Python based backend business logic
 infra/                  Deployment config
 docs/knowledge_base     Documentation for building agent knowledge base
+docs/adr/               ADRs definition for agent reference
 ```
 
 ## 2. Primary Agents
 ### rag-architect
 - **Role**: Designs RAG pipeline components
-- **Scope**: `src/ingestion/`, `src/retrieval/`, `src/embedding/`
 - **Constraints**: Must follow RAG pattern
 - **Validation**: All designs must pass architecture review in ARCHITECTURE.md
 
 ### api-engineer  
-- **Role**: Builds REST/gRPC APIs
+- **Role**: Builds REST/SSE APIs
 - **Scope**: `src/api/`
 - **Constraints**: OpenAPI 3.1 spec, Pydantic v2, async endpoints
-- **Validation**: 100% endpoint test coverage required
+- **Validation**: Above 80% endpoint test coverage required
 
-### governance-specialist
-- **Role**: Implements security & compliance
-- **Scope**: `src/governance/`
-- **Constraints**: GDPR Article 25 (Data Protection by Design), SOC 2 Type II
-- **Validation**: Security audit checklist in `docs/security-checklist.md`
 
 ## 3. Quality Expectations
 ### Think Before Coding
@@ -78,9 +79,8 @@ pnpm test:e2e          # Playwright e2e tests
 ```
 
 ## 5. Workflow: Feature Development
-
 1. **Plan**: Agent analyzes task, references ARCHITECTURE.md & CONVENTIONS.md
 2. **Implement**: Code with type hints, docstrings, error handling
 3. **Test**: Unit tests + integration tests + evaluation metrics
-4. **Review**: Self-review against SKILL.md standards
+4. **Review**: Self-review against REVIEW-STANDARDS.md standards
 5. **Validate**: CI pipeline must pass before completion
