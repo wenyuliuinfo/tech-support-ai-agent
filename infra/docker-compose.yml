@@ -1,0 +1,31 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-local
+    environment:
+      POSTGRES_USER: ${DB_USER:-myuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mypassword}
+      POSTGRES_DB: ${DB_NAME:-mydb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-myuser}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pinecone-local:
+    image: ghcr.io/pinecone-io/pinecone-local:latest
+    container_name: pinecone-local
+    platform: linux/amd64
+    environment:
+      PORT: 5080
+      PINECONE_HOST: localhost
+    ports:
+      - "5080-5090:5080-5090"
+
+volumes:
+  pgdata:
