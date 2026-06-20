@@ -14,7 +14,7 @@ The person interacting with the support assistant through the frontend.
 _Avoid_: Account, customer account
 
 **Ticket**:
-A support case associated with an `Account`, containing issue details, status, and historical resolution data.
+A support case associated with an `Account`, containing issue subject, status, and historical resolution data.
 _Avoid_: Case, incident, request
 
 **Knowledge Base Document**:
@@ -56,7 +56,3 @@ _Avoid_: Generation, ingestion
 **Grounding**:
 The requirement that an `Answer` be supported by retrieved knowledge base content rather than unsupported model knowledge.
 _Avoid_: Hallucination prevention, prompting
-
-**Support Session**:
-A single interactive question-answer exchange between the `End User` and the assistant.
-_Avoid_: Ticket, conversation thread
