@@ -1,0 +1,100 @@
+# docs/eval/eval_set.yaml
+#
+# Evaluation dataset for the tech-support RAG system.
+# Each entry maps to ARCHITECTURE.md §9.1 requirements:
+#   - expected relevant documents
+#   - expected citations
+#   - expected answer characteristics
+#   - optional known-good ticket context
+#
+# Used to compute the metrics in §9.2 (retrieval) and §9.3 (answer quality).
+# Per §9.5, no change may regress citation correctness or groundedness
+# below the thresholds defined in `docs/eval/thresholds.yaml`.
+
+- id: eval_001
+  query: "How do I enable replication for VMware VMs?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000001"  # fixture account, see tests/fixtures/
+
+  # --- Retrieval expectations (§9.2) ---
+  expected_documents:
+    - document_id: "doc123"
+      source_path: "docs/knowledge_base/vmware-replication.md"
+      relevance: required        # used for Recall@k / Precision@k
+  expected_chunks:
+    - chunk_id: "doc123_4_a1b2c3"   # used for citation-source match rate
+
+  # --- Ticket context (optional, §6 / §7.4) ---
+  known_good_ticket_context:
+    ticket_number: 4821
+    expected_role: secondary        # secondary | none | conflicting
+    note: "Used to confirm Ticket Context never overrides KB guidance"
+
+  # --- Answer expectations (§9.3 / §7.2 Answer Contract) ---
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true         # false => expect fallback per §7.3
+    must_not_contain:                # hallucination guardrails
+      - "feature not in KB e.g. fabricated CLI flag"
+    answer_characteristics:
+      - directly_responsive
+      - separates_kb_guidance_from_ticket_history
+
+  # --- Test category, for slicing results in reports ---
+  category: grounded_procedural
+  notes: "Baseline happy-path case: KB has a clear, current answer."
+
+
+- id: eval_002
+  query: "How do I configure failover for Hyper-V VMs on Azure?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000001"
+
+  expected_documents: []   # no relevant KB doc exists — tests fallback
+  expected_chunks: []
+
+  known_good_ticket_context: null
+
+  expected_answer:
+    must_include_citation: false
+    grounding_expected: false        # must trigger §7.3 fallback behavior
+    expected_response_type: insufficient_grounding
+    must_not_contain:
+      - "any fabricated step-by-step instructions"
+    answer_characteristics:
+      - states_insufficient_context
+      - suggests_next_step
+
+  category: fallback_no_grounding
+  notes: "No matching KB content exists; tests refusal correctness (§9.3)."
+
+
+- id: eval_003
+  query: "Why is my replication still failing after the steps from my last ticket?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000002"
+
+  expected_documents:
+    - document_id: "doc123"
+      source_path: "docs/knowledge_base/vmware-replication.md"
+      relevance: required
+  expected_chunks:
+    - chunk_id: "doc123_4_a1b2c3"
+
+  known_good_ticket_context:
+    ticket_number: 5310
+    expected_role: conflicting       # ticket resolution contradicts current KB
+    note: "Ticket resolution describes an outdated workaround; KB has since changed"
+
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true
+    must_mention:
+      - "historical ticket data may be outdated"   # §7.4 Conflict Handling
+    must_not_contain:
+      - "presenting the ticket resolution as canonical guidance"
+    answer_characteristics:
+      - prefers_kb_over_ticket_context
+      - flags_ticket_as_possibly_outdated
+
+  category: conflict_kb_vs_ticket
+  notes: "Tests §7.4 Conflict Handling — KB must win, ticket flagged as secondary."

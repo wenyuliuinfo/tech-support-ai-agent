@@ -1,0 +1,17 @@
+# docs/eval/thresholds.yaml
+#
+# Release gates per ARCHITECTURE.md §9.5.
+# A change fails CI if any metric regresses below its threshold
+# relative to the last accepted baseline.
+
+retrieval:
+  recall_at_k: 0.85
+  precision_at_k: 0.75
+  mrr: 0.80
+  citation_source_match_rate: 0.90
+
+answer_quality:
+  groundedness: 0.90
+  citation_correctness: 0.90
+  hallucination_rate_max: 0.05
+  refusal_correctness: 0.90
