@@ -1,6 +1,12 @@
 # Web framework
-fastapi==0.115.6
+fastapi>=0.115.0
 uvicorn[standard]==0.34.0
+python-multipart>=0.0.18
+python-dotenv>=1.0.0
+boto3>=1.35.0
+python-magic>=0.4.27
+Pillow>=11.0.0
+PyPDF2>=3.0.0
 
 # Validation
 pydantic==2.10.4
@@ -14,8 +20,17 @@ alembic==1.14.0
 # Vector DB
 pinecone-client==5.0.1
 
-# LLM / embeddings
+# RAG / LLM / embeddings
 openai==1.58.1
+lancedb~=0.20.0
+tantivy>=0.22.0
+sentence-transformers>=3.0.0
+langchain>=0.3.0
+langchain-anthropic>=0.3.0
+langchain-openai>=0.3.0
+langchain-community>=0.3.0
+tiktoken>=0.8.0
+pyarrow>=18.0.0
 
 # Auth (JWT verification against external IdP)
 python-jose[cryptography]==3.3.0
