@@ -20,7 +20,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["app"]
+known-first-party = ["routers", "services", "repositories"]
 
 [tool.ruff.format]
 quote-style = "double"
