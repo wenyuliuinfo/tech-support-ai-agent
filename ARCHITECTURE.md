@@ -26,7 +26,7 @@
   - account_id: Primary key (UUID)
   - email: Email (unique)
   - name: Display name
-  - external_id: using external IdP
+  - external_id: using external magic link email
   - created_at: Creation timestamp
 
   Auth approach:
@@ -64,13 +64,15 @@ Relationship: One account can have many tickets(one-to-many)
     {"query": "How do I enable replication for VMware VMs?"}
     ```
   - Response:
-    `text/event-stream` (SSE). Each event is a JSON object on a `data: event` line. Event types:
-    **token** — one chunk of generated answer text - `data: {"type": "token", "content": "To enable "}`
-    **citation** — emitted once per Knowledge Base chunk used to ground the
+    `text/event-stream` (SSE). Each event is a JSON object on a `data: event` line. 
+
+    Event types:
+    - **token** — one chunk of generated answer text - `data: {"type": "token", "content": "To enable "}`
+    - **citation** — emitted once per Knowledge Base chunk used to ground the
     answer; may be interleaved with tokens or batched at the end - `data: {"type": "citation", "chunk_id": "doc123_4_a1b2c3", "document_id": "doc123", "source_path": "docs/knowledge_base/vmware-replication.md", "title": "VMware Replication Setup", "section_heading": "Enabling Replication"}`
-    **ticket_context** — emitted if a historical ticket informed the answer (secondary context, never a substitute for a citation) - `data: {"type": "ticket_context", "ticket_number": 4821, "note": "Referenced for account-specific history; not canonical guidance"}`
-    **error** — emitted on LLM/provider failure; terminates the stream - `data: {"type": "error", "message": "LLM provider timeout", "trace_id": "..."}`
-    **done** — terminal event, always sent on a successful or gracefully degraded completion - `data: {"type": "done"}`
+    - **ticket_context** — emitted if a historical ticket informed the answer (secondary context, never a substitute for a citation) - `data: {"type": "ticket_context", "ticket_number": 4821, "note": "Referenced for account-specific history; not canonical guidance"}`
+    - **error** — emitted on LLM/provider failure; terminates the stream - `data: {"type": "error", "message": "LLM provider timeout", "trace_id": "..."}`
+    - **done** — terminal event, always sent on a successful or gracefully degraded completion - `data: {"type": "done"}`
 
 
 ## 3. Architecture Diagram
@@ -78,7 +80,7 @@ Here we design a RAG system for retrieving internal documents as referenced cont
 
 ### 3.1 Data Flow Explanation
 #### 3.1.1 Online Query Path (real-time)
-1. **Authenticate** - User logs in via the external IdP (Auth0/Clerk/Cognito — see §1.2.1). On success, the backend issues a session token (JWT) containing `account_id`. The frontend stores this token and attaches it to all subsequent requests (`Authorization: Bearer <token>`).
+1. **Authenticate** - User logs in via the Magic Link authentication (Auth0). On success, the backend issues a session token (JWT) containing `account_id`. The frontend stores this token and attaches it to all subsequent requests (`Authorization: Bearer <token>`).
 2. **Load Tickets for Account** - On page load, the Next.js frontend calls `GET /tickets` with the session token. The backend extracts `account_id` from the validated token — it is never read from a query param, form field, or request body. The database returns the ticket list for that account only.
 3. **Send Question** - User types a question; Next.js frontend sends `POST /chat` with the session token attached. `account_id` is derived server-side from the token, not from the request body.
 4. **Search Past Tickets (relational DB)** - Backend queries the relational DB for tickets belonging to this account that are relevant to the query:
@@ -240,7 +242,7 @@ A document is re-embedded when:
 - required metadata fields change
 
 ### 8.6 Idempotency
-Repeated ingestion of the same document version must produce the same chunk IDs and overwrite prior records safely. (e.g. chunk_id = f"{document_id}_{chunk_index}_{content_hash}".)
+Repeated ingestion of the same document version must produce the same chunk IDs and overwrite prior records safely. (e.g. `chunk_id = f"{document_id}_{chunk_index}_{content_hash}"`.)
 
 
 ## 9. Evaluation Plan
@@ -334,18 +336,23 @@ The target system consists of:
 5. Backend streams tokens and citations to the frontend over SSE.
 
 ### 11.3 Failure Modes
-**Pinecone unavailable**:
+- **Pinecone unavailable**:
 Return a degraded response stating that document retrieval is temporarily unavailable.
 Do not fabricate an answer from model knowledge alone.
-**PostgreSQL unavailable**:
+
+- **PostgreSQL unavailable**:
 Proceed without Ticket Context if possible and note that account history could not be loaded.
-**LLM timeout or provider failure**:
+
+- **LLM timeout or provider failure**:
 Terminate the stream with a structured error event and trace ID.
-**No relevant retrieval results**:
+
+- **No relevant retrieval results**:
 Return an insufficient-grounding response rather than speculative guidance.
-**Ingestion lag**:
+
+- **Ingestion lag**:
 Expose document ingestion timestamps so stale knowledge can be detected.
-**Partial downstream slowdown**:
+
+- **Partial downstream slowdown**:
 Use timeouts, retries, and circuit breakers on external dependencies.
 
 ### 11.4 Observability
