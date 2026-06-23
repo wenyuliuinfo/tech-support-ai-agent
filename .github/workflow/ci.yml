@@ -27,17 +27,17 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt --break-system-packages
-        working-directory: src/api
+        working-directory: src/app
       - run: ruff check .
-        working-directory: src/api
+        working-directory: src/app
       - run: mypy --strict .
-        working-directory: src/api
+        working-directory: src/app
       - run: alembic upgrade head
-        working-directory: src/api
+        working-directory: src/app
         env:
           DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
       - run: pytest --cov --cov-fail-under=80
-        working-directory: src/api
+        working-directory: src/app
         env:
           DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
 
