@@ -16,11 +16,12 @@ alembic==1.14.0
 pinecone-client==5.0.1
 
 # LLM / embeddings
+zhipuai
 openai==1.58.1
 tiktoken>=0.8.0
 
 # Auth (JWT verification against external IdP)
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]
 httpx==0.28.1
 
 # PII detection (per CONVENTIONS.md)

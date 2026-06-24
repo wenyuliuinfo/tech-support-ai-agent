@@ -18,9 +18,15 @@ for i, layer in enumerate(LAYER_ORDER):
     FORBIDDEN_IMPORTS[layer] = set(LAYER_ORDER[i + 1 :])
 
 
+EXCLUDE_DIRS = {".venv", "node_modules", ".git", "__pycache__", "dist", "build", ".mypy_cache"}
+
+
 def _get_python_files(directory: Path) -> list[Path]:
-    """Get all .py files in a directory recursively."""
-    return list(directory.rglob("*.py"))
+    """Get all .py files in a directory recursively, skipping EXCLUDE_DIRS."""
+    return [
+        p for p in directory.rglob("*.py")
+        if not any(excl in p.parts for excl in EXCLUDE_DIRS)
+    ]
 
 
 def _get_imports(filepath: Path) -> list[str]:
@@ -55,7 +61,7 @@ def _get_function_defs(tree: ast.AST) -> list[ast.FunctionDef | ast.AsyncFunctio
     return [
         node
         for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
     ]
 
 
