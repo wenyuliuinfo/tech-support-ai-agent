@@ -116,6 +116,7 @@ pnpm ingest:dry        # dry-run: compute chunks and metadata without upserting
 pnpm ingest:verify     # verify vector store matches local KB manifest
 pnpm lint:api          # backend lint (ruff)
 pnpm test:api          # backend tests (pytest)
+pnpm test:eval         # backend evaluation tests (pytest)
 pnpm check:structure   # structural boundary tests
 pnpm test:e2e          # Playwright e2e tests
 ```
