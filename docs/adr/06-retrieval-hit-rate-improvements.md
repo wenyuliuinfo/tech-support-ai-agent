@@ -63,7 +63,7 @@ relevant to answer the specific question.
 **Change:** Retrieve a wider candidate set from Pinecone (e.g. `k=20` instead
 of `k=8`), then rerank with a cross-encoder before truncating to the final
 `k=8` used in prompt construction. This becomes a required step in
-`services/chat_service.py`'s retrieval orchestration, not optional.
+`services/chat.py`'s retrieval orchestration, not optional.
 
 **Why second:** Directly targets Precision@k and citation-source match rate,
 the two metrics most sensitive to "right document family, wrong specific
@@ -80,7 +80,7 @@ this vocabulary gap.
 through a lightweight rewrite step (either a small/cheap LLM call, or a
 simpler HyDE-style approach: generate a hypothetical answer snippet and embed
 that instead of the raw question). This is additive to
-`services/chat_service.py`'s existing flow — the rewritten query replaces
+`services/chat.py`'s existing flow — the rewritten query replaces
 the raw query only for the embedding step; the raw query is still what's
 shown to the user and still what's used for ticket full-text search from
 lever 1.

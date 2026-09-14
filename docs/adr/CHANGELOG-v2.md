@@ -76,9 +76,9 @@ record Recall@8, Precision@8, MRR, and citation-source match rate in ADR-06's
 
 1. Ticket search: substring match → PostgreSQL full-text search
    (`repositories/ticket.py` only). Run eval; record delta.
-2. Reranking pass on KB retrieval (`services/chat_service.py`). Run eval;
+2. Reranking pass on KB retrieval (`services/chat.py`). Run eval;
    record delta.
-3. Query rewriting before embedding (`services/chat_service.py`). Run eval;
+3. Query rewriting before embedding (`services/chat.py`). Run eval;
    record delta; also re-check p95/p99 latency (ARCHITECTURE.md §9.4) since
    this lever adds a round-trip.
 
