@@ -18,7 +18,7 @@ A support case associated with an `Account`, containing issue subject, status, a
 _Avoid_: Case, incident, request
 
 **Knowledge Base Document**:
-A curated support or product document stored in `docs/knowledge_base` and used as a grounding source for retrieval.
+A curated support or product document stored in MinIO local storage and used as a grounding source for retrieval.
 _Avoid_: Ticket, attachment, customer document
 
 **Chunk**:
