@@ -6,7 +6,7 @@ Use it together with `AGENTS.md`, `CONTEXT.md`, `ARCHITECTURE.md`, and `CONVENTI
 ## Purpose
 
 This repository builds a tech-support RAG system that answers user questions using:
-- Knowledge Base Documents from `docs/knowledge_base`
+- Knowledge Base Documents from MinIO local storage
 - account-scoped ticket history from PostgreSQL
 - a FastAPI backend and Next.js frontend
 
