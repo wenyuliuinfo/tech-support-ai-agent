@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     pinecone_host_url: str
     pinecone_index_name: str
 
+    # MinIO / S3-compatible object storage
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_bucket_name: str
+    minio_use_ssl: bool
+
     # CORS
     cors_origin: str
     # PostgreSQL

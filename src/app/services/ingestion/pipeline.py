@@ -1,8 +1,7 @@
-"""Ingestion service: parses KB documents, chunks, embeds, upserts to Pinecone."""
+"""Ingestion pipeline: parse KB documents, chunk, embed, and upsert to Pinecone."""
 
 import hashlib
 import logging
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,9 +12,11 @@ from config import get_settings
 from repositories.openai_repo import EmbeddingRepository
 from repositories.pinecone import ChunkUpsert, PineconeRepository
 
+from .parsers.markdown import extract_title, split_by_heading
+
 logger = logging.getLogger(__name__)
 
-KB_DIR = Path(__file__).parent.parent.parent.parent / "docs" / "knowledge_base"
+KB_DIR = Path(__file__).parent.parent.parent.parent.parent / "docs" / "knowledge_base"
 
 
 @dataclass
@@ -36,8 +37,10 @@ class IngestionManifest:
 
 
 class IngestionService:
-    CHUNK_SIZE_CHARS = 2000
-    CHUNK_OVERLAP_CHARS = 200
+    CHUNK_SIZE_CHARS = 500
+    CHUNK_OVERLAP_CHARS = 50
+    CHUNK_SIZE_TOKENS = CHUNK_SIZE_CHARS
+    CHUNK_OVERLAP_TOKENS = CHUNK_OVERLAP_CHARS
 
     def __init__(self) -> None:
         self._embed = EmbeddingRepository()
@@ -58,15 +61,25 @@ class IngestionService:
             idx_info = client.describe_index(index_name)
             existing_dim = idx_info.dimension
             if existing_dim == settings.embedding_dimension:
-                logger.info("Pinecone index '%s' already exists (dim=%d), skipping creation", index_name, existing_dim)
+                logger.info(
+                    "Pinecone index '%s' already exists (dim=%d), skipping creation",
+                    index_name,
+                    existing_dim,
+                )
                 return
             logger.warning(
                 "Pinecone index '%s' has dimension %d, but config expects %d. Recreating...",
-                index_name, existing_dim, settings.embedding_dimension,
+                index_name,
+                existing_dim,
+                settings.embedding_dimension,
             )
             client.delete_index(index_name)
 
-        logger.info("Creating Pinecone index '%s' (dim=%d, metric=cosine)", index_name, settings.embedding_dimension)
+        logger.info(
+            "Creating Pinecone index '%s' (dim=%d, metric=cosine)",
+            index_name,
+            settings.embedding_dimension,
+        )
         client.create_index(
             name=index_name,
             dimension=settings.embedding_dimension,
@@ -77,11 +90,10 @@ class IngestionService:
 
     async def ingest_all(self) -> list[IngestionManifest]:
         manifests: list[IngestionManifest] = []
-        kb_path = KB_DIR
-        if not kb_path.exists():
+        if not KB_DIR.exists():
             return manifests
 
-        for md_file in sorted(kb_path.glob("*.md")):
+        for md_file in sorted(KB_DIR.glob("*.md")):
             manifest = await self._ingest_file(md_file)
             if manifest:
                 manifests.append(manifest)
@@ -98,6 +110,9 @@ class IngestionService:
 
         document_id = hashlib.sha256(source_path.encode()).hexdigest()[:16]
         ingestion_version = datetime.now(UTC).isoformat()
+        settings = get_settings()
+        storage_bucket = settings.minio_bucket_name
+        storage_key = f"knowledge-base/{document_id}/{ingestion_version}/{file_name}"
         title = self._extract_title(content)
         chunks = self._chunk_document(content, title)
 
@@ -114,6 +129,8 @@ class IngestionService:
                     chunk_id=chunk_id,
                     document_id=document_id,
                     source_path=source_path,
+                    storage_key=storage_key,
+                    storage_bucket=storage_bucket,
                     file_name=file_name,
                     chunk_index=chunk.chunk_index,
                     content=chunk.content,
@@ -138,22 +155,22 @@ class IngestionService:
         )
 
     def _chunk_document(self, content: str, title: str) -> list[ParsedChunk]:
-        sections = self._split_by_heading(content)
+        sections = split_by_heading(content)
         chunks: list[ParsedChunk] = []
         chunk_index = 0
 
-        for section_heading, section_text in sections:
+        for section in sections:
             pos = 0
-            while pos < len(section_text):
-                end = min(pos + self.CHUNK_SIZE_CHARS, len(section_text))
-                chunk_text = section_text[pos:end]
+            while pos < len(section.text):
+                end = min(pos + self.CHUNK_SIZE_CHARS, len(section.text))
+                chunk_text = section.text[pos:end]
 
                 chunks.append(
                     ParsedChunk(
                         chunk_index=chunk_index,
                         content=chunk_text,
                         title=title,
-                        section_heading=section_heading,
+                        section_heading=section.heading or "",
                     )
                 )
                 chunk_index += 1
@@ -163,31 +180,8 @@ class IngestionService:
 
     @staticmethod
     def _extract_title(content: str) -> str:
-        for line in content.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("# "):
-                return stripped[2:].strip()
-        return "Untitled"
+        return extract_title(content)
 
     @staticmethod
     def _split_by_heading(content: str) -> list[tuple[str, str]]:
-        heading_pattern = re.compile(r"^(#{1,3})\s+(.+)$", re.MULTILINE)
-        matches = list(heading_pattern.finditer(content))
-
-        if not matches:
-            return [("", content)]
-
-        sections: list[tuple[str, str]] = []
-        for i, match in enumerate(matches):
-            heading = match.group(2).strip()
-            start = match.end()
-            end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
-            sections.append((heading, content[start:end].strip()))
-
-        first_start = matches[0].start()
-        if first_start > 0:
-            pre_content = content[:first_start].strip()
-            if pre_content:
-                sections.insert(0, ("", pre_content))
-
-        return sections
+        return [(section.heading or "", section.text) for section in split_by_heading(content)]

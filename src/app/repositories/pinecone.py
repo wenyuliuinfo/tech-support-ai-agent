@@ -21,6 +21,8 @@ class ChunkResult:
     title: str
     section_heading: str
     score: float
+    storage_key: str = ""
+    storage_bucket: str = ""
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,8 @@ class ChunkUpsert:
     embedding: list[float]
     ingestion_version: str
     updated_at: str
+    storage_key: str = ""
+    storage_bucket: str = ""
 
 
 class PineconeRepository:
@@ -78,6 +82,8 @@ class PineconeRepository:
                     chunk_id=str(meta.get("chunk_id", match.id)),
                     document_id=str(meta.get("document_id", "")),
                     source_path=str(meta.get("source_path", "")),
+                    storage_key=str(meta.get("storage_key", "")),
+                    storage_bucket=str(meta.get("storage_bucket", "")),
                     file_name=str(meta.get("file_name", "")),
                     chunk_index=int(meta.get("chunk_index", 0)),
                     content=str(meta.get("content", "")),
@@ -96,6 +102,8 @@ class PineconeRepository:
                 "metadata": {
                     "document_id": c.document_id,
                     "source_path": c.source_path,
+                    "storage_key": c.storage_key,
+                    "storage_bucket": c.storage_bucket,
                     "file_name": c.file_name,
                     "chunk_index": c.chunk_index,
                     "chunk_id": c.chunk_id,

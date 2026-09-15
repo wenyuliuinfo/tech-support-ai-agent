@@ -53,7 +53,7 @@ class ChatService:
         # Step 2: Retrieve Knowledge Base chunks from Pinecone (best-effort)
         kb_chunks: list[ChunkResult] = []
         try:
-            kb_chunks = await self._pinecone.query_chunks(embedding, top_k=5)
+            kb_chunks = await self._pinecone.query_chunks(embedding, top_k=8)
         except Exception:
             logger.warning("Pinecone query failed, continuing without KB context",
                            exc_info=True)

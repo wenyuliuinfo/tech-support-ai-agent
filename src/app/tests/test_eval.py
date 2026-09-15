@@ -6,9 +6,10 @@ hallucination guardrails, and answer characteristics per ARCHITECTURE.md §9.
 """
 
 import json
+from contextlib import suppress
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
-from uuid import UUID, uuid4
+from unittest.mock import patch
+from uuid import UUID
 
 import pytest
 import yaml
@@ -96,10 +97,8 @@ async def _collect_events(service: ChatService, query: str, account_id: UUID) ->
     async for raw in service.stream_answer(query, account_id):
         for line in raw.splitlines():
             if line.startswith("data: "):
-                try:
+                with suppress(json.JSONDecodeError):
                     events.append(json.loads(line[6:]))
-                except json.JSONDecodeError:
-                    pass
     return events
 
 
