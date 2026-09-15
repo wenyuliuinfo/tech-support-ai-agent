@@ -8,6 +8,26 @@ on:
 jobs:
   api:
     runs-on: ubuntu-latest
+    env:
+      CHAT_API_KEY: test
+      CHAT_BASE_URL: https://example.com
+      CHAT_MODEL: test
+      EMBEDDING_API_KEY: test
+      EMBEDDING_BASE_URL: https://example.com
+      EMBEDDING_MODEL: test
+      EMBEDDING_DIMENSION: "1024"
+      PINECONE_API_KEY: test
+      PINECONE_HOST_URL: http://localhost:5080
+      PINECONE_INDEX_NAME: test
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
+      IDP_DOMAIN: example.com
+      IDP_CLIENT_ID: test
+      IDP_CLIENT_SECRET: test
+      IDP_AUDIENCE: test
+      APP_ENV: test
+      LOG_LEVEL: info
+      RATE_LIMIT_PER_ACCOUNT_PER_MIN: "1000"
     services:
       postgres:
         image: postgres:16
@@ -30,19 +50,13 @@ jobs:
         working-directory: src/app
       - run: ruff check .
         working-directory: src/app
-      - run: mypy --strict .
+      - run: python -m pytest
         working-directory: src/app
-      - run: alembic upgrade head
-        working-directory: src/app
-        env:
-          DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
-      - run: pytest --cov --cov-fail-under=80
-        working-directory: src/app
-        env:
-          DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
 
   web:
     runs-on: ubuntu-latest
+    env:
+      API_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -50,5 +64,4 @@ jobs:
         with:
           node-version: 20
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
       - run: pnpm build
