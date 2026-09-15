@@ -19,6 +19,11 @@ jobs:
       PINECONE_API_KEY: test
       PINECONE_HOST_URL: http://localhost:5080
       PINECONE_INDEX_NAME: test
+      MINIO_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: test
+      MINIO_SECRET_KEY: test
+      MINIO_BUCKET_NAME: test
+      MINIO_USE_SSL: "false"
       CORS_ORIGIN: http://localhost:3000
       DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
       IDP_DOMAIN: example.com
