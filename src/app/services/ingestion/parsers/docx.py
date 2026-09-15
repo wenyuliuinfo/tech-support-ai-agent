@@ -30,7 +30,7 @@ def parse_docx(data: bytes) -> list[ParsedSection]:
         text_parts = []
 
     for paragraph in document.paragraphs:
-        style_name = (paragraph.style.name or "").lower()
+        style_name = (paragraph.style.name if paragraph.style else "").lower()
         if "heading" in style_name:
             flush()
             heading = paragraph.text.strip() or None
@@ -38,4 +38,11 @@ def parse_docx(data: bytes) -> list[ParsedSection]:
             text_parts.append(paragraph.text)
 
     flush()
+
+    # ADR-05 flattens DOCX tables into text for this iteration.
+    for table in document.tables:
+        for row in table.rows:
+            text_parts.append(" | ".join(cell.text.strip() for cell in row.cells))
+    flush()
+
     return sections

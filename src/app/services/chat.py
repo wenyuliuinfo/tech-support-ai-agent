@@ -76,6 +76,7 @@ class ChatService:
                 "source_path": chunk.source_path,
                 "title": chunk.title,
                 "section_heading": chunk.section_heading,
+                "page_number": chunk.page_number,
             })
 
         # Step 5: Yield ticket context

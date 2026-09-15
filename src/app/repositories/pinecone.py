@@ -23,6 +23,8 @@ class ChunkResult:
     score: float
     storage_key: str = ""
     storage_bucket: str = ""
+    document_type: str = ""
+    page_number: int | None = None
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,8 @@ class ChunkUpsert:
     updated_at: str
     storage_key: str = ""
     storage_bucket: str = ""
+    document_type: str = ""
+    page_number: int | None = None
 
 
 class PineconeRepository:
@@ -84,6 +88,12 @@ class PineconeRepository:
                     source_path=str(meta.get("source_path", "")),
                     storage_key=str(meta.get("storage_key", "")),
                     storage_bucket=str(meta.get("storage_bucket", "")),
+                    document_type=str(meta.get("document_type", "")),
+                    page_number=(
+                        int(meta["page_number"])
+                        if meta.get("page_number") is not None
+                        else None
+                    ),
                     file_name=str(meta.get("file_name", "")),
                     chunk_index=int(meta.get("chunk_index", 0)),
                     content=str(meta.get("content", "")),
@@ -95,27 +105,30 @@ class PineconeRepository:
         return chunks
 
     async def upsert_chunks(self, chunks: list[ChunkUpsert]) -> None:
-        vectors = [
-            {
+        vectors = []
+        for c in chunks:
+            metadata = {
+                "document_id": c.document_id,
+                "source_path": c.source_path,
+                "storage_key": c.storage_key,
+                "storage_bucket": c.storage_bucket,
+                "document_type": c.document_type,
+                "file_name": c.file_name,
+                "chunk_index": c.chunk_index,
+                "chunk_id": c.chunk_id,
+                "content": c.content,
+                "title": c.title,
+                "section_heading": c.section_heading,
+                "ingestion_version": c.ingestion_version,
+                "updated_at": c.updated_at,
+            }
+            if c.page_number is not None:
+                metadata["page_number"] = c.page_number
+            vectors.append({
                 "id": c.chunk_id,
                 "values": c.embedding,
-                "metadata": {
-                    "document_id": c.document_id,
-                    "source_path": c.source_path,
-                    "storage_key": c.storage_key,
-                    "storage_bucket": c.storage_bucket,
-                    "file_name": c.file_name,
-                    "chunk_index": c.chunk_index,
-                    "chunk_id": c.chunk_id,
-                    "content": c.content,
-                    "title": c.title,
-                    "section_heading": c.section_heading,
-                    "ingestion_version": c.ingestion_version,
-                    "updated_at": c.updated_at,
-                },
-            }
-            for c in chunks
-        ]
+                "metadata": metadata,
+            })
         self._index.upsert(vectors=vectors)
 
     async def delete_by_document_id(self, document_id: str) -> None:

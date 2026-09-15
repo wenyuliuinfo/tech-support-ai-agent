@@ -151,6 +151,7 @@ export function ChatPanel({
                     <div key={ci} className="text-xs text-[var(--muted-foreground)] mt-1">
                       <span className="font-medium">{cite.title}</span>
                       {cite.section_heading && <> — {cite.section_heading}</>}
+                      {cite.page_number && <> — p. {cite.page_number}</>}
                     </div>
                   ))}
                 </div>

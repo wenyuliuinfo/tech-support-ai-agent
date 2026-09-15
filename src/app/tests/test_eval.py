@@ -21,7 +21,6 @@ from services.chat import ChatService
 
 EVAL_DIR = Path(__file__).resolve().parent.parent.parent.parent / "docs" / "eval"
 
-
 def _load_yaml(filename: str) -> list | dict:
     path = EVAL_DIR / filename
     if not path.exists():
@@ -43,28 +42,27 @@ def _thresholds() -> dict:
     return data if isinstance(data, dict) else {}
 
 
-# ---------------------------------------------------------------------------
-# Helpers: build mock data from eval case expectations
-# ---------------------------------------------------------------------------
-
 def _build_mock_chunks(case: dict) -> list[ChunkResult]:
     """Build ChunkResult mocks matching expected_documents/expected_chunks."""
     chunks: list[ChunkResult] = []
     for i, doc in enumerate(case.get("expected_documents", [])):
+        source_path = doc.get("source_path", "docs/knowledge_base/mock.md")
         chunks.append(
             ChunkResult(
                 chunk_id=doc.get("document_id", f"mock_doc_{i}") + "_0_mockhash",
                 document_id=doc.get("document_id", f"mock_doc_{i}"),
-                source_path=doc.get("source_path", "docs/knowledge_base/mock.md"),
-                file_name="mock.md",
+                source_path=source_path,
+                file_name=Path(source_path).name,
                 chunk_index=0,
                 content=(
                     "To enable replication, navigate to Settings > Replication "
                     "and toggle the Enable switch."
                 ),
-                title="Mock KB Document",
-                section_heading="Enabling Replication",
+                title=doc.get("title", "Mock KB Document"),
+                section_heading=doc.get("section_heading", "Enabling Replication"),
                 score=0.95,
+                document_type=doc.get("document_type", "md"),
+                page_number=doc.get("page_number"),
             )
         )
     return chunks
@@ -87,12 +85,7 @@ def _build_mock_tickets(case: dict) -> list[TicketRecord]:
     ]
 
 
-# ---------------------------------------------------------------------------
-# Helpers: collect and parse SSE events
-# ---------------------------------------------------------------------------
-
 async def _collect_events(service: ChatService, query: str, account_id: UUID) -> list[dict]:
-    """Run stream_answer and return parsed SSE event dicts."""
     events: list[dict] = []
     async for raw in service.stream_answer(query, account_id):
         for line in raw.splitlines():
@@ -108,12 +101,6 @@ def _event_types(events: list[dict]) -> set[str]:
 
 def _full_response(events: list[dict]) -> str:
     return "".join(e.get("content", "") for e in events if e.get("type") == "token")
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("case_id,case", _eval_cases(), ids=[c[0] for c in _eval_cases()])
@@ -193,6 +180,16 @@ async def test_eval_case(case_id: str, case: dict):
     assert citation_count >= min_citations, (
         f"[{case_id}] Expected ≥{min_citations} citations, got {citation_count}"
     )
+
+    expected_page_number = expected.get("page_number")
+    if expected_page_number is not None:
+        citation_page_numbers = [
+            e.get("page_number") for e in events if e.get("type") == "citation"
+        ]
+        assert expected_page_number in citation_page_numbers, (
+            f"[{case_id}] Expected PDF citation page {expected_page_number}, "
+            f"got {citation_page_numbers}"
+        )
 
     # --- grounding ---
     grounding_expected = expected.get("grounding_expected", True)
