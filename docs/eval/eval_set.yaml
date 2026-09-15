@@ -98,3 +98,111 @@
 
   category: conflict_kb_vs_ticket
   notes: "Tests §7.4 Conflict Handling — KB must win, ticket flagged as secondary."
+
+- id: eval_004
+  query: "What architecture does Azure Site Recovery use for VMware VMs?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000003"
+
+  expected_documents:
+    - document_id: "pdf_architecture_vmware"
+      source_path: "docs/knowledge_base/site_recovery_vmware_azure_architecture.pdf"
+      document_type: pdf
+      page_number: 1
+      title: "Site Recovery VMware Azure Architecture"
+      section_heading: "VMware Architecture"
+      relevance: required
+  expected_chunks:
+    - chunk_id: "pdf_architecture_vmware_0_mockhash"
+
+  known_good_ticket_context: null
+
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true
+    page_number: 1
+    answer_characteristics:
+      - directly_responsive
+
+  category: pdf_grounded_procedural
+  notes: "PDF-sourced citation must include a page number."
+
+- id: eval_005
+  query: "How do I monitor Site Recovery health and events?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000003"
+
+  expected_documents:
+    - document_id: "pdf_monitoring_faq"
+      source_path: "docs/knowledge_base/site_recovery_monitoring_faq.pdf"
+      document_type: pdf
+      page_number: 2
+      title: "Site Recovery Monitoring FAQ"
+      section_heading: "Monitoring"
+      relevance: required
+  expected_chunks:
+    - chunk_id: "pdf_monitoring_faq_0_mockhash"
+
+  known_good_ticket_context: null
+
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true
+    page_number: 2
+    answer_characteristics:
+      - directly_responsive
+
+  category: pdf_grounded_procedural
+  notes: "Second PDF case asserts page-level citations."
+
+- id: eval_006
+  query: "What are the steps for a VMware DR drill?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000004"
+
+  expected_documents:
+    - document_id: "docx_dr_drill"
+      source_path: "docs/knowledge_base/tutorial_vmware_azure_dr_drill.docx"
+      document_type: docx
+      title: "VMware Azure DR Drill"
+      section_heading: "Run a DR Drill"
+      relevance: required
+  expected_chunks:
+    - chunk_id: "docx_dr_drill_0_mockhash"
+
+  known_good_ticket_context: null
+
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true
+    answer_characteristics:
+      - directly_responsive
+
+  category: docx_grounded_procedural
+  notes: "DOCX-sourced citations work without a page number."
+
+- id: eval_007
+  query: "How do I set up VMware replication from on-premises to Azure?"
+  account_id: "a1b2c3d4-0000-0000-0000-000000000004"
+
+  expected_documents:
+    - document_id: "docx_replication_setup"
+      source_path: "docs/knowledge_base/tutorial_vmware_azure_setup_replication_modernized.docx"
+      document_type: docx
+      title: "Set Up VMware Replication"
+      section_heading: "Enabling Replication"
+      relevance: required
+  expected_chunks:
+    - chunk_id: "docx_replication_setup_0_mockhash"
+
+  known_good_ticket_context: null
+
+  expected_answer:
+    must_include_citation: true
+    min_citations: 1
+    grounding_expected: true
+    answer_characteristics:
+      - directly_responsive
+
+  category: docx_grounded_procedural
+  notes: "Second DOCX case asserts format-agnostic chunking."
