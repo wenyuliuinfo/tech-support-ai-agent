@@ -17,6 +17,10 @@
 - `section_heading`
 - `ingestion_version`
 - `updated_at`
+- `storage_key`
+- `storage_bucket`
+- `document_type`
+- `page_number`
 
 ### 1.2 Relational Database
 - Relational Database: PostgreSQL
@@ -69,7 +73,7 @@ Relationship: One account can have many tickets(one-to-many)
     Event types:
     - **token** — one chunk of generated answer text - `data: {"type": "token", "content": "To enable "}`
     - **citation** — emitted once per Knowledge Base chunk used to ground the
-    answer; may be interleaved with tokens or batched at the end - `data: {"type": "citation", "chunk_id": "doc123_4_a1b2c3", "document_id": "doc123", "source_path": "docs/knowledge_base/vmware-replication.md", "title": "VMware Replication Setup", "section_heading": "Enabling Replication"}`
+    answer; may be interleaved with tokens or batched at the end - `data: {"type": "citation", "page_number": "123", "chunk_id": "doc123_4_a1b2c3", "document_id": "doc123", "source_path": "docs/knowledge_base/vmware-replication.md", "title": "VMware Replication Setup", "section_heading": "Enabling Replication"}`
     - **ticket_context** — emitted if a historical ticket informed the answer (secondary context, never a substitute for a citation) - `data: {"type": "ticket_context", "ticket_number": 4821, "note": "Referenced for account-specific history; not canonical guidance"}`
     - **error** — emitted on LLM/provider failure; terminates the stream - `data: {"type": "error", "message": "LLM provider timeout", "trace_id": "..."}`
     - **done** — terminal event, always sent on a successful or gracefully degraded completion - `data: {"type": "done"}`
@@ -98,7 +102,7 @@ Database returns matching tickets information.
 
 #### 3.1.2 Offline Ingestion Path (asynchronous)
 ##### 3.1.2.1 Document Ingestion
-1. **Source Documents** - New documents (PDF, Word, .md file etc.) are originate from `docs/knowledge_base`.
+1. **Source Documents** - New documents (PDF, Word, .md file etc.) are originate from MinIO local storage.
 2. **Chunking** - Documents are split into overlapping chunks (e.g., 500 tokens, overlap 50).
 3. **Embedding** - Each chunk is passed to the same embedding model to generate a vector.
 4. **Upsert to Pinecone** - Vectors are inserted into Pinecone DB along with metadata (file_name, path, chunk_index, content, original_row_index, etc.).
@@ -136,7 +140,7 @@ Database returns matching tickets information.
 The assistant retrieves from two sources:
 1. **Knowledge Base Documents**
    Source of truth for product and procedural guidance.
-   Documents originate from `docs/knowledge_base` and are embedded into Pinecone.
+   Documents originate from MinIO storage and are embedded into Pinecone.
 2. **Ticket Context**
    Historical support tickets for the current `account_id`.
    Tickets are stored in PostgreSQL and may be used to personalize or contextualize the answer.
@@ -204,11 +208,11 @@ If Ticket Context conflicts with Knowledge Base Documents:
 Knowledge Base ingestion is an offline pipeline that transforms repo-managed Markdown documents into searchable vector records.
 
 ### 8.1 Source of Truth
-The source of truth is the `docs/knowledge_base` directory in the repository.
+Use MinIO as canonical source-of-truth for document content (git remains provenance for the original 14 files only).
 
 ### 8.2 Lifecycle Stages
 1. Detect added, changed, or deleted documents.
-2. Parse Markdown into normalized document text and metadata.
+2. Parse Markdown, PDF or WORD files into normalized document text and metadata.
 3. Split documents into chunks using a deterministic chunking strategy.
 4. Generate embeddings for each chunk.
 5. Upsert chunk vectors and metadata into Pinecone.
@@ -233,6 +237,10 @@ Each chunk record must include:
 - `section_heading`
 - `ingestion_version`
 - `updated_at`
+- `storage_key`
+- `storage_bucket`
+- `document_type`
+- `page_number`
 
 ### 8.5 Re-indexing Rules
 A document is re-embedded when:
@@ -325,7 +333,7 @@ The target system consists of:
 - PostgreSQL for account and ticket data
 - Pinecone for Knowledge Base vector search
 - LLM provider for answer generation
-- offline ingestion worker for indexing `docs/knowledge_base`
+- offline ingestion worker for indexing MinIO storage document files
 - scheduled ETL worker for syncing ticket data
 
 ### 11.2 Request Path
